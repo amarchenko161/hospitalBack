@@ -7,9 +7,17 @@ const jwt = require("jsonwebtoken");
 const Schema = mongoose.Schema;
 const { secret } = require("./config");
 
+
 const userSchema = new Schema({
-  login: { type: String, unique: true, required: true },
-  password: { type: String, required: true },
+  login: { type: String },
+  password: { type: String },
+});
+
+const appointmentSchema = new Schema({
+  name: { type: String },
+  doctor: { type: String },
+  date: { type: String },
+  complaint: { type: String }
 });
 
 app.use(cors());
@@ -18,7 +26,9 @@ app.use(express.json());
 const uri =
   "mongodb+srv://todoDB:restart987@cluster0.lnnws.mongodb.net/hospitalDB?retryWrites=true&w=majority";
 mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
 const User = mongoose.model("hospitalUser", userSchema);
+const Appointment = mongoose.model("hospitalAppointment", appointmentSchema);
 
 const generateAccessToken = (id) => {
   const payload = { id };
@@ -64,6 +74,28 @@ app.post("/createUser", (req, res) => {
   } else {
     res.status(404).send("Error");
   }
+});
+
+app.post("/createAppointment", (req, res) => {
+  if (
+    req.body.hasOwnProperty("name") &&
+    req.body.hasOwnProperty("doctor") &&
+    req.body.hasOwnProperty("date") &&
+    req.body.hasOwnProperty("complaint")
+  ) {
+    const appointment = new Appointment(req.body);
+    appointment.save().then((result) => {
+      res.send ({data:result});
+    })
+  } else {
+    res.status(404).send("Error");
+  }
+});
+
+app.get("/allAppointment", (req, res) => {
+  Appointment.find().then((result) => {
+    res.send({ data: result });
+  });
 });
 
 app.listen(8000, () => {
