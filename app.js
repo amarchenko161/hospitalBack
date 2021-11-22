@@ -7,7 +7,6 @@ const jwt = require("jsonwebtoken");
 const Schema = mongoose.Schema;
 const { secret } = require("./config");
 
-
 const userSchema = new Schema({
   login: { type: String },
   password: { type: String },
@@ -17,7 +16,7 @@ const appointmentSchema = new Schema({
   name: { type: String },
   doctor: { type: String },
   date: { type: String },
-  complaint: { type: String }
+  complaint: { type: String },
 });
 
 app.use(cors());
@@ -85,8 +84,8 @@ app.post("/createAppointment", (req, res) => {
   ) {
     const appointment = new Appointment(req.body);
     appointment.save().then((result) => {
-      res.send ({data:result});
-    })
+      res.send({ data: result });
+    });
   } else {
     res.status(404).send("Error");
   }
@@ -96,6 +95,18 @@ app.get("/allAppointment", (req, res) => {
   Appointment.find().then((result) => {
     res.send({ data: result });
   });
+});
+
+app.delete("/deleteAppointment", (req, res) => {
+  if (req.query._id) {
+    Appointment.deleteOne({ _id: req.query._id }).then((result) => {
+      Appointment.find().then((result) => {
+        res.send({ data: result });
+      });
+    });
+  } else {
+    res.status(404).send("Error");
+  }
 });
 
 app.listen(8000, () => {
