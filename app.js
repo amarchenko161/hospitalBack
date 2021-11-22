@@ -109,6 +109,27 @@ app.delete("/deleteAppointment", (req, res) => {
   }
 });
 
+app.patch("/updateAppointmen", (req, res) => {
+  if (req.body._id) {
+    if (
+      req.body.hasOwnProperty("name") ||
+      req.body.hasOwnProperty("doctor") ||
+      req.body.hasOwnProperty("date") ||
+      req.body.hasOwnProperty("complaint")
+    ) {
+      Appointment.updateOne({ _id: req.body._id }, req.body).then((result) => {
+        Appointment.find().then((result) => {
+          res.send({ data: result });
+        });
+      });
+    } else {
+      res.status(404).send("Error");
+    }
+  } else {
+    res.status(404).send("Error");
+  }
+});
+
 app.listen(8000, () => {
   console.log("Example app listening on port 8000!");
 });
