@@ -17,8 +17,10 @@ const appointmentSchema = new Schema({
   doctor: { type: String },
   date: { type: String },
   complaint: { type: String },
+  userId: { type: String },
 });
 
+app.use(express.json());
 app.use(cors());
 app.use(express.json());
 
@@ -31,7 +33,7 @@ const Appointment = mongoose.model("hospitalAppointment", appointmentSchema);
 
 const generateAccessToken = (id) => {
   const payload = { id };
-  return jwt.sign(payload, secret, { expiresIn: "24h" });
+  return (accessToken = jwt.sign(payload, secret, { expiresIn: "24h" }));
 };
 
 app.post("/singin", (req, res) => {
@@ -66,7 +68,8 @@ app.post("/createUser", (req, res) => {
         res.status(404).send("err");
       } else {
         user.save().then((result) => {
-          res.send({ data: result });
+          const token = generateAccessToken(result._id);
+          res.send({ data: result, token });
         });
       }
     });
@@ -75,26 +78,49 @@ app.post("/createUser", (req, res) => {
   }
 });
 
-app.post("/createAppointment", (req, res) => {
-  if (
-    req.body.hasOwnProperty("name") &&
-    req.body.hasOwnProperty("doctor") &&
-    req.body.hasOwnProperty("date") &&
-    req.body.hasOwnProperty("complaint")
-  ) {
-    const appointment = new Appointment(req.body);
-    appointment.save().then((result) => {
-      res.send({ data: result });
-    });
-  } else {
+app.post("/createAppointment", async (req, res) => {
+  const { token } = req.headers;
+  if (!token) {
     res.status(404).send("Error");
+  }
+  const info = await jwt.verify(token, secret);
+  if (info) {
+    try {
+      if (
+        req.body.hasOwnProperty("name") &&
+        req.body.hasOwnProperty("doctor") &&
+        req.body.hasOwnProperty("date") &&
+        req.body.hasOwnProperty("complaint")
+      ) {
+        req.body.userId = info.id;
+        const appointment = new Appointment(req.body);
+        appointment.save().then((result) => {
+          res.send({ data: result });
+        });
+      } else {
+        res.status(404).send("Error");
+      }
+    } catch {
+      res.status(404).send("Error");
+    }
   }
 });
 
-app.get("/allAppointment", (req, res) => {
-  Appointment.find().then((result) => {
-    res.send({ data: result });
-  });
+app.get("/allAppointment", async (req, res) => {
+  const { token } = req.headers;
+  if (!token) {
+    res.status(404).send("Error");
+  }
+  const info = await jwt.verify(token, secret);
+  if (info) {
+    try {
+      Appointment.find({ userId: info.id }).then((result) => {
+        res.send({ data: result });
+      });
+    } catch (err) {
+      res.status(404).send("Error");
+    }
+  }
 });
 
 app.delete("/deleteAppointment", (req, res) => {
