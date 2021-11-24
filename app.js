@@ -33,7 +33,7 @@ const Appointment = mongoose.model("hospitalAppointment", appointmentSchema);
 
 const generateAccessToken = (id) => {
   const payload = { id };
-  return (accessToken = jwt.sign(payload, secret, { expiresIn: "24h" }));
+  return jwt.sign(payload, secret, { expiresIn: "24h" });
 };
 
 app.post("/singin", (req, res) => {
@@ -83,9 +83,9 @@ app.post("/createAppointment", async (req, res) => {
   if (!token) {
     res.status(404).send("Error");
   }
-  const info = await jwt.verify(token, secret);
-  if (info) {
-    try {
+  try {
+    const info = await jwt.verify(token, secret);
+    if (info) {
       if (
         req.body.hasOwnProperty("name") &&
         req.body.hasOwnProperty("doctor") &&
@@ -97,12 +97,10 @@ app.post("/createAppointment", async (req, res) => {
         appointment.save().then((result) => {
           res.send({ data: result });
         });
-      } else {
-        res.status(404).send("Error");
       }
-    } catch {
-      res.status(404).send("Error");
     }
+  } catch {
+    res.status(404).send("Error");
   }
 });
 
@@ -111,15 +109,15 @@ app.get("/allAppointment", async (req, res) => {
   if (!token) {
     res.status(404).send("Error");
   }
-  const info = await jwt.verify(token, secret);
-  if (info) {
-    try {
+  try {
+    const info = await jwt.verify(token, secret);
+    if (info) {
       Appointment.find({ userId: info.id }).then((result) => {
         res.send({ data: result });
       });
-    } catch (err) {
-      res.status(404).send("Error");
     }
+  } catch (err) {
+    res.status(404).send("Error");
   }
 });
 
@@ -136,21 +134,17 @@ app.delete("/deleteAppointment", (req, res) => {
 });
 
 app.patch("/updateAppointmen", (req, res) => {
-  if (req.body._id) {
-    if (
-      req.body.hasOwnProperty("name") ||
-      req.body.hasOwnProperty("doctor") ||
-      req.body.hasOwnProperty("date") ||
-      req.body.hasOwnProperty("complaint")
-    ) {
-      Appointment.updateOne({ _id: req.body._id }, req.body).then((result) => {
-        Appointment.find().then((result) => {
-          res.send({ data: result });
-        });
+  if (
+    (req.body._id && req.body.hasOwnProperty("name")) ||
+    req.body.hasOwnProperty("doctor") ||
+    req.body.hasOwnProperty("date") ||
+    req.body.hasOwnProperty("complaint")
+  ) {
+    Appointment.updateOne({ _id: req.body._id }, req.body).then((result) => {
+      Appointment.find().then((result) => {
+        res.send({ data: result });
       });
-    } else {
-      res.status(404).send("Error");
-    }
+    });
   } else {
     res.status(404).send("Error");
   }
